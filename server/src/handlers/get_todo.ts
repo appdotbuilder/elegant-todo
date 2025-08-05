@@ -1,18 +1,29 @@
 
+import { db } from '../db';
+import { todosTable } from '../db/schema';
 import { type GetTodoInput, type Todo } from '../schema';
+import { eq } from 'drizzle-orm';
 
 export const getTodo = async (input: GetTodoInput): Promise<Todo | null> => {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching a single todo item by ID from the database.
-    // It should return the todo if found, or null if not found.
-    return Promise.resolve({
-        id: input.id,
-        title: 'Sample Todo',
-        description: null,
-        completed: false,
-        due_date: null,
-        priority: 'Medium' as const,
-        created_at: new Date(),
-        updated_at: new Date()
-    } as Todo);
+  try {
+    const result = await db.select()
+      .from(todosTable)
+      .where(eq(todosTable.id, input.id))
+      .execute();
+
+    if (result.length === 0) {
+      return null;
+    }
+
+    const todo = result[0];
+    
+    // Convert date string to Date object to match schema expectations
+    return {
+      ...todo,
+      due_date: todo.due_date ? new Date(todo.due_date) : null
+    };
+  } catch (error) {
+    console.error('Get todo failed:', error);
+    throw error;
+  }
 };
